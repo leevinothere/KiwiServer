@@ -5,6 +5,7 @@ import os
 app = Flask(__name__)
 
 DATABASE = "kiwi.db"
+WEBSITE_FOLDER = "websites"
 
 
 def create_database():
@@ -34,6 +35,7 @@ def index():
 def get_site(name):
     name = name.lower().strip()
 
+    # First check database (user websites)
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
 
@@ -46,10 +48,22 @@ def get_site(name):
 
     conn.close()
 
-    if not result:
-        abort(404)
+    if result:
+        return result[0]
 
-    return result[0]
+
+    # Then check GitHub websites folder (built-in Kiwi pages)
+    filename = os.path.join(
+        WEBSITE_FOLDER,
+        f"{name}.html"
+    )
+
+    if os.path.exists(filename):
+        with open(filename, "r", encoding="utf-8") as f:
+            return f.read()
+
+
+    abort(404)
 
 
 @app.route("/publish", methods=["POST"])
@@ -60,11 +74,14 @@ def publish():
     if not data:
         return jsonify(success=False)
 
+
     name = data.get("name", "").lower().strip()
     html = data.get("html", "")
 
+
     if not name or not html:
         return jsonify(success=False)
+
 
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
@@ -74,8 +91,10 @@ def publish():
     VALUES (?, ?)
     """, (name, html))
 
+
     conn.commit()
     conn.close()
+
 
     print("Saved website:", name)
 
@@ -83,19 +102,43 @@ def publish():
 
 
 @app.route("/websites")
-def websites():
+def list_websites():
 
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
 
-    cursor.execute("SELECT name FROM websites")
+    cursor.execute(
+        "SELECT name FROM websites"
+    )
 
-    sites = cursor.fetchall()
+    database_sites = [
+        row[0]
+        for row in cursor.fetchall()
+    ]
 
     conn.close()
 
-    return jsonify([site[0] for site in sites])
+
+    # Add built-in pages too
+    folder_sites = []
+
+    if os.path.exists(WEBSITE_FOLDER):
+        for file in os.listdir(WEBSITE_FOLDER):
+            if file.endswith(".html"):
+                folder_sites.append(
+                    file[:-5]
+                )
+
+
+    all_sites = sorted(
+        set(database_sites + folder_sites)
+    )
+
+    return jsonify(all_sites)
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=3000)
+    app.run(
+        host="0.0.0.0",
+        port=3000
+    )
