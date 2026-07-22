@@ -1,16 +1,28 @@
-from flask_cors import CORS
 from flask import Flask, request, abort, jsonify
+import sqlite3
 import os
 
 app = Flask(__name__)
-CORS(app)
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-WEBSITE_FOLDER = os.path.join(BASE_DIR, "websites")
+DATABASE = "kiwi.db"
 
-os.makedirs(WEBSITE_FOLDER, exist_ok=True)
 
-print("Website folder:", WEBSITE_FOLDER)
+def create_database():
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS websites (
+        name TEXT PRIMARY KEY,
+        html TEXT
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
+
+create_database()
 
 
 @app.route("/")
@@ -21,56 +33,68 @@ def index():
 @app.route("/site/<name>")
 def get_site(name):
     name = name.lower().strip()
-    filename = os.path.join(WEBSITE_FOLDER, f"{name}.html")
 
-    print("Looking for:", filename)
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
 
-    if not os.path.exists(filename):
+    cursor.execute(
+        "SELECT html FROM websites WHERE name = ?",
+        (name,)
+    )
+
+    result = cursor.fetchone()
+
+    conn.close()
+
+    if not result:
         abort(404)
 
-    with open(filename, "r", encoding="utf-8") as f:
-        return f.read()
+    return result[0]
 
 
 @app.route("/publish", methods=["POST"])
 def publish():
+
     data = request.get_json()
 
-    print("Received:", data)
-
     if not data:
-        return jsonify(success=False, error="No JSON received")
+        return jsonify(success=False)
 
-    name = data.get("name", "").strip().lower()
+    name = data.get("name", "").lower().strip()
     html = data.get("html", "")
 
-    if not name:
-        return jsonify(success=False, error="Website name is empty")
+    if not name or not html:
+        return jsonify(success=False)
 
-    if not html:
-        return jsonify(success=False, error="Website HTML is empty")
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
 
-    filename = os.path.join(WEBSITE_FOLDER, f"{name}.html")
+    cursor.execute("""
+    INSERT OR REPLACE INTO websites (name, html)
+    VALUES (?, ?)
+    """, (name, html))
 
-    print("Saving to:", filename)
+    conn.commit()
+    conn.close()
 
-    with open(filename, "w", encoding="utf-8") as f:
-        f.write(html)
+    print("Saved website:", name)
 
     return jsonify(success=True)
 
 
 @app.route("/websites")
 def websites():
-    files = []
 
-    for file in os.listdir(WEBSITE_FOLDER):
-        if file.endswith(".html"):
-            files.append(file[:-5])
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
 
-    files.sort()
+    cursor.execute("SELECT name FROM websites")
 
-    return jsonify(files)
+    sites = cursor.fetchall()
+
+    conn.close()
+
+    return jsonify([site[0] for site in sites])
 
 
 if __name__ == "__main__":
