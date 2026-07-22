@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="UTF-8">
+<title>Kiwi Website Creator</title>
+
+<style>
+body{
+    background:#1e1e1e;
+    color:white;
+    font-family:Arial;
+    padding:30px;
+}
+
+input, textarea{
+    width:100%;
+    margin-top:8px;
+    margin-bottom:20px;
+    padding:10px;
+    background:#2d2d2d;
+    color:white;
+    border:1px solid #555;
+}
+
+button{
+    padding:12px 20px;
+    background:#2ecc71;
+    border:none;
+    color:white;
+    cursor:pointer;
+    font-size:16px;
+}
+
+button:hover{
+    background:#27ae60;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>🥝 Kiwi Website Creator</h1>
+
+<p>This page is running from Kiwi Cloud.</p>
+
+<label>Website Name</label>
+<input id="name">
+
+<label>Website HTML</label>
+<textarea id="html" rows="15">
+<h1>Hello Kiwi!</h1>
+<p>My first Kiwi website.</p>
+</textarea>
+
+<button onclick="publish()">
+Publish Website
+</button>
+
+<p id="status"></p>
+
+<script>
+
+function publish(){
+
+fetch("http://127.0.0.1:3000/publish",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+
+name:document.getElementById("name").value,
+
+html:document.getElementById("html").value
+
+})
+
+})
+
+.then(r=>r.json())
+
+.then(data=>{
+
+if(data.success){
+
+document.getElementById("status").innerHTML=
+"✅ Published! Visit kiwi://"+
+document.getElementById("name").value;
+
+}else{
+
+document.getElementById("status").innerHTML=
+"❌ Publish failed.";
+
+}
+
+});
+
+}
+
+</script>
+
+</body>
+</html>
