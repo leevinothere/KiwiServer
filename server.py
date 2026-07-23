@@ -1,32 +1,17 @@
 from flask import Flask, request, abort, jsonify
 from flask_cors import CORS
-import sqlite3
+from supabase import create_client
 import os
+
+supabase = create_client(
+    os.environ["SUPABASE_URL"],
+    os.environ["SUPABASE_KEY"]
+)
 
 app = Flask(__name__)
 CORS(app)
 
-DATABASE = "kiwi.db"
 WEBSITE_FOLDER = "websites"
-
-
-def create_database():
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS websites (
-        name TEXT PRIMARY KEY,
-        html TEXT
-    )
-    """)
-
-    conn.commit()
-    conn.close()
-
-
-create_database()
-
 
 @app.route("/")
 def index():
@@ -37,24 +22,17 @@ def index():
 def get_site(name):
     name = name.lower().strip()
 
-    # First check database (user websites)
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
-
-    cursor.execute(
-        "SELECT html FROM websites WHERE name = ?",
-        (name,)
+    response = (
+        supabase.table("websites")
+        .select("html")
+        .eq("name", name)
+        .execute()
     )
 
-    result = cursor.fetchone()
+    if response.data:
+        return response.data[0]["html"]
 
-    conn.close()
-
-    if result:
-        return result[0]
-
-
-    # Then check GitHub websites folder (built-in Kiwi pages)
+    # Then check GitHub websites folder
     filename = os.path.join(
         WEBSITE_FOLDER,
         f"{name}.html"
@@ -63,7 +41,6 @@ def get_site(name):
     if os.path.exists(filename):
         with open(filename, "r", encoding="utf-8") as f:
             return f.read()
-
 
     abort(404)
 
@@ -76,50 +53,31 @@ def publish():
     if not data:
         return jsonify(success=False)
 
-
     name = data.get("name", "").lower().strip()
     html = data.get("html", "")
-
 
     if not name or not html:
         return jsonify(success=False)
 
-
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
-
-    cursor.execute("""
-    INSERT OR REPLACE INTO websites (name, html)
-    VALUES (?, ?)
-    """, (name, html))
-
-
-    conn.commit()
-    conn.close()
-
+    supabase.table("websites").upsert({
+        "name": name,
+        "html": html
+    }).execute()
 
     print("Saved website:", name)
 
     return jsonify(success=True)
 
-
 @app.route("/websites")
 def list_websites():
 
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
-
-    cursor.execute(
-        "SELECT name FROM websites"
+    response = (
+        supabase.table("websites")
+        .select("name")
+        .execute()
     )
 
-    database_sites = [
-        row[0]
-        for row in cursor.fetchall()
-    ]
-
-    conn.close()
-
+    database_sites = [row["name"] for row in response.data]
 
     # Add built-in pages too
     folder_sites = []
