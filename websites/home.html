@@ -85,7 +85,7 @@ if(text.includes(".")){
     return;
 }
 
-alert("Search: " + text);
+location.href = "/site/search?q=" + encodeURIComponent(text);
 
 });
 
