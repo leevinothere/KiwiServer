@@ -1,5 +1,95 @@
-<h1>🥝 Kiwi Cloud</h1>
+<!DOCTYPE html>
+<html>
+<head>
+<title>Kiwi Browser</title>
 
-<p>Welcome to Kiwi Cloud!</p>
+<style>
+body{
+    font-family:Arial,sans-serif;
+    background:#f5f5f5;
+    text-align:center;
+    margin-top:80px;
+}
 
-<p>This page is coming from the server.</p>
+h1{
+    font-size:48px;
+    color:#3ba83b;
+}
+
+input{
+    width:600px;
+    max-width:90%;
+    padding:15px;
+    font-size:20px;
+    border-radius:30px;
+    border:2px solid #ccc;
+}
+
+.card{
+    display:inline-block;
+    margin:15px;
+    padding:20px;
+    width:150px;
+    background:white;
+    border-radius:15px;
+    box-shadow:0 2px 8px rgba(0,0,0,.15);
+    cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🥝 Kiwi Browser</h1>
+
+<input
+id="search"
+placeholder="Search the web or type kiwi://..."
+>
+
+<br><br>
+
+<div class="card" onclick="location.href='kiwi://home'">
+☁️
+<br><br>
+Home
+</div>
+
+<div class="card" onclick="location.href='https://youtube.com'">
+📺
+<br><br>
+YouTube
+</div>
+
+<div class="card" onclick="location.href='kiwi://create'">
+🤖
+<br><br>
+Create
+</div>
+
+<script>
+
+document.getElementById("search").addEventListener("keydown",e=>{
+
+if(e.key!="Enter") return;
+
+let text=e.target.value.trim();
+
+if(text.startsWith("kiwi://")){
+    location.href=text;
+    return;
+}
+
+if(text.includes(".")){
+    location.href="https://"+text;
+    return;
+}
+
+location.href="kiwi://search?q="+encodeURIComponent(text);
+
+});
+
+</script>
+
+</body>
+</html>
