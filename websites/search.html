@@ -7,7 +7,15 @@
 
 <h1>🥝 Kiwi Search</h1>
 
-<p>Search results will appear here.</p>
+<h2 id="query"></h2>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const q = params.get("q");
+
+document.getElementById("query").textContent =
+    'Results for "' + q + '"';
+</script>
 
 </body>
 </html>
