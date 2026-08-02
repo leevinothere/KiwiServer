@@ -3,9 +3,12 @@ from flask_cors import CORS
 from supabase import create_client
 import os
 
+SUPABASE_URL = os.environ["SUPABASE_URL"]
+SUPABASE_KEY = os.environ["SUPABASE_KEY"]
+
 supabase = create_client(
-    os.environ["SUPABASE_URL"],
-    os.environ["SUPABASE_KEY"]
+    SUPABASE_URL,
+    SUPABASE_KEY
 )
 
 app = Flask(__name__)
@@ -96,7 +99,21 @@ def list_websites():
 
     return jsonify(all_sites)
 
-
+@app.route("/search")
+def search():
+    query = request.args.get("q", "")
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Kiwi Search</title>
+    </head>
+    <body>
+        <h1>🥝 Kiwi Search</h1>
+        <h2>Results for "{query}"</h2>
+    </body>
+    </html>
+    """
 if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
