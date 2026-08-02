@@ -103,11 +103,7 @@ def list_websites():
 def search():
     query = request.args.get("q", "").lower().strip()
 
-    response = (
-        supabase.table("websites")
-        .select("name")
-        .execute()
-    )
+    all_sites = list_websites().get_json()
 
     html = f"""
     <h1>🥝 Kiwi Search</h1>
@@ -116,23 +112,6 @@ def search():
 
     found = False
 
-    all_sites = []
-
-    # Supabase websites
-    for row in response.data:
-        all_sites.append(row["name"])
-
-    # Built-in websites
-    if os.path.exists(WEBSITE_FOLDER):
-        for file in os.listdir(WEBSITE_FOLDER):
-            if file.endswith(".html"):
-                all_sites.append(file[:-5])
-
-    # Remove duplicates
-    all_sites = sorted(set(all_sites))
-    html += "<pre>" + str(all_sites) + "</pre>"
-
-    # Search everything
     for name in all_sites:
         if query in name.lower():
             found = True
