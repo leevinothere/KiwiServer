@@ -101,19 +101,38 @@ def list_websites():
 
 @app.route("/search")
 def search():
-    query = request.args.get("q", "")
-    return f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Kiwi Search</title>
-    </head>
-    <body>
-        <h1>🥝 Kiwi Search</h1>
-        <h2>Results for "{query}"</h2>
-    </body>
-    </html>
+    query = request.args.get("q", "").lower().strip()
+
+    response = (
+        supabase.table("websites")
+        .select("name")
+        .execute()
+    )
+
+    html = f"""
+    <h1>🥝 Kiwi Search</h1>
+    <h2>Results for "{query}"</h2>
     """
+
+    found = False
+
+    for row in response.data:
+        name = row["name"]
+
+        if query in name.lower():
+            found = True
+            html += f"""
+            <p>
+                <a href="/site/{name}">
+                    🥝 {name}
+                </a>
+            </p>
+            """
+
+    if not found:
+        html += "<p>No Kiwi websites found.</p>"
+
+    return html
 if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
