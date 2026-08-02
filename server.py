@@ -116,9 +116,23 @@ def search():
 
     found = False
 
-    for row in response.data:
-        name = row["name"]
+    all_sites = []
 
+    # Supabase websites
+    for row in response.data:
+        all_sites.append(row["name"])
+
+    # Built-in websites
+    if os.path.exists(WEBSITE_FOLDER):
+        for file in os.listdir(WEBSITE_FOLDER):
+            if file.endswith(".html"):
+                all_sites.append(file[:-5])
+
+    # Remove duplicates
+    all_sites = sorted(set(all_sites))
+
+    # Search everything
+    for name in all_sites:
         if query in name.lower():
             found = True
             html += f"""
