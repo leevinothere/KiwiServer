@@ -130,6 +130,7 @@ def search():
 
     # Remove duplicates
     all_sites = sorted(set(all_sites))
+    html += "<pre>" + str(all_sites) + "</pre>"
 
     # Search everything
     for name in all_sites:
